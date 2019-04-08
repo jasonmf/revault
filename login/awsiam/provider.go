@@ -7,6 +7,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
@@ -14,18 +15,16 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/hashicorp/vault/api"
 	"github.com/pkg/errors"
-
-	"github.com/AgentZombie/revault"
 )
 
 type provider struct {
-	session  *aws.Session
+	session  *session.Session
 	role     string
 	authPath string
-	client   revault.VaultLogicalWriter
+	client   *api.Client
 }
 
-func New(session *aws.Session, client revault.VaultLogicalWriter, role, authPath string) *provider {
+func New(session *session.Session, client *api.Client, role, authPath string) *provider {
 	p := &provider{
 		session:  session,
 		role:     role,
@@ -51,7 +50,7 @@ func (p provider) Token() (*api.SecretAuth, time.Time, error) {
 		"iam_request_url":         base64.StdEncoding.EncodeToString([]byte(stsReq.HTTPRequest.URL.String())),
 		"iam_request_headers":     base64.StdEncoding.EncodeToString(headersJson),
 		"iam_request_body":        base64.StdEncoding.EncodeToString(reqBody),
-		"role":                    p.Role,
+		"role":                    p.role,
 	}
 
 	sec, err := p.client.Logical().Write(path.Join("auth", p.authPath, "login"), loginData)
@@ -61,11 +60,15 @@ func (p provider) Token() (*api.SecretAuth, time.Time, error) {
 	if sec == nil {
 		return nil, time.Time{}, errors.New("empty response logging in")
 	}
-	tokenExpires = time.Now().Add(time.Second * time.Duration(sec.Auth.LeaseDuration))
+	tokenExpires := time.Now().Add(time.Second * time.Duration(sec.Auth.LeaseDuration))
 	return sec.Auth, tokenExpires, nil
 }
 
-func EnvironmentSession() (*aws.Session, error) {
+func (p provider) Close() error {
+	return p.client.Auth().Token().RevokeSelf("")
+}
+
+func EnvironmentSession() (*session.Session, error) {
 	creds := credentials.NewChainCredentials(
 		[]credentials.Provider{
 			&credentials.EnvProvider{},
