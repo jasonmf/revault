@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/hashicorp/vault/api"
 
 	"github.com/AgentZombie/revault"
@@ -34,6 +35,7 @@ func main() {
 
 	sess, err := awsiam.EnvironmentSession()
 	fatalIfError(err, "getting AWS session from environment")
+	sess.Config.Region = aws.String("us-west-2")
 
 	apiClient, err := api.NewClient(api.DefaultConfig())
 	fatalIfError(err, "creating vault client")
