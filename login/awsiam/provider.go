@@ -36,7 +36,9 @@ func New(session *session.Session, client *api.Client, role, authPath string) *p
 
 func (p provider) Token() (*api.SecretAuth, time.Time, error) {
 	stsReq, _ := sts.New(p.session).GetCallerIdentityRequest(nil)
-	stsReq.Sign()
+	if err := stsReq.Sign(); err != nil {
+		return nil, time.Time{}, errors.Wrap(err, "signing request")
+	}
 	headersJson, err := json.Marshal(stsReq.HTTPRequest.Header)
 	if err != nil {
 		return nil, time.Time{}, errors.Wrap(err, "marshalling STS request header")
