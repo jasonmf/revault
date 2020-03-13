@@ -3,6 +3,8 @@ package awsiam
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"path"
 	"time"
@@ -14,7 +16,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/hashicorp/vault/api"
-	"github.com/pkg/errors"
 )
 
 type provider struct {
@@ -37,15 +38,15 @@ func New(session *session.Session, client *api.Client, role, authPath string) *p
 func (p provider) Token() (*api.SecretAuth, time.Time, error) {
 	stsReq, _ := sts.New(p.session).GetCallerIdentityRequest(nil)
 	if err := stsReq.Sign(); err != nil {
-		return nil, time.Time{}, errors.Wrap(err, "signing request")
+		return nil, time.Time{}, fmt.Errorf("signing request: %w", err)
 	}
 	headersJson, err := json.Marshal(stsReq.HTTPRequest.Header)
 	if err != nil {
-		return nil, time.Time{}, errors.Wrap(err, "marshalling STS request header")
+		return nil, time.Time{}, fmt.Errorf("marshalling STS request header: %w", err)
 	}
 	reqBody, err := ioutil.ReadAll(stsReq.HTTPRequest.Body)
 	if err != nil {
-		return nil, time.Time{}, errors.Wrap(err, "reading sts request body")
+		return nil, time.Time{}, fmt.Errorf("reading sts request body: %w", err)
 	}
 	loginData := map[string]interface{}{
 		"iam_http_request_method": stsReq.HTTPRequest.Method,
@@ -57,7 +58,7 @@ func (p provider) Token() (*api.SecretAuth, time.Time, error) {
 
 	sec, err := p.client.Logical().Write(path.Join("auth", p.authPath, "login"), loginData)
 	if err != nil {
-		return nil, time.Time{}, errors.Wrap(err, "logging in")
+		return nil, time.Time{}, fmt.Errorf("logging in: %w", err)
 	}
 	if sec == nil {
 		return nil, time.Time{}, errors.New("empty response logging in")
@@ -83,7 +84,7 @@ func EnvironmentSession() (*session.Session, error) {
 		Config: aws.Config{Credentials: creds},
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "creating STS session")
+		return nil, fmt.Errorf("creating STS session: %w", err)
 	}
 	return sess, nil
 }

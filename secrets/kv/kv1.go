@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/vault/api"
-	"github.com/pkg/errors"
 
 	"github.com/AgentZombie/revault"
 )
@@ -23,11 +22,11 @@ type KV1 struct {
 func (kv KV1) Get(relPath string) (Secret, error) {
 	l, err := kv.C.Logical()
 	if err != nil {
-		return Secret{}, errors.Wrap(err, "preparing request")
+		return Secret{}, fmt.Errorf("preparing request: %w", err)
 	}
 	sec, err := l.Read(path.Join(kv.BasePath, relPath))
 	if err != nil {
-		return Secret{}, errors.Wrap(err, "retrieving secret")
+		return Secret{}, fmt.Errorf("retrieving secret: %w", err)
 	}
 	return SecretFromAPISecret(sec), nil
 }
@@ -35,11 +34,11 @@ func (kv KV1) Get(relPath string) (Secret, error) {
 func (kv KV1) List(relPath string) (Listing, error) {
 	l, err := kv.C.Logical()
 	if err != nil {
-		return Listing{}, errors.Wrap(err, "preparing request")
+		return Listing{}, fmt.Errorf("preparing request: %w", err)
 	}
 	sec, err := l.List(path.Join(kv.BasePath, relPath))
 	if err != nil {
-		return Listing{}, errors.Wrap(err, "retrieving listing")
+		return Listing{}, fmt.Errorf("retrieving listing: %w", err)
 	}
 	return ListingFromAPISecret(sec), nil
 }
@@ -47,7 +46,7 @@ func (kv KV1) List(relPath string) (Listing, error) {
 func (kv KV1) Delete(relPath string) (*api.Secret, error) {
 	l, err := kv.C.Logical()
 	if err != nil {
-		return nil, errors.Wrap(err, "preparing request")
+		return nil, fmt.Errorf("preparing request: %w", err)
 	}
 	return l.Delete(path.Join(kv.BasePath, relPath))
 }
@@ -66,11 +65,11 @@ func (kv KV1) Set(relPath string, sec Secret) (*api.Secret, error) {
 func (kv KV1) SetRaw(relPath string, data map[string]interface{}) (*api.Secret, error) {
 	l, err := kv.C.Logical()
 	if err != nil {
-		return nil, errors.Wrap(err, "preparing request")
+		return nil, fmt.Errorf("preparing request: %w", err)
 	}
 	secOut, err := l.Write(path.Join(kv.BasePath, relPath), data)
 	if err != nil {
-		return nil, errors.Wrap(err, "writing data")
+		return nil, fmt.Errorf("writing data: %w", err)
 	}
 	return secOut, nil
 }
