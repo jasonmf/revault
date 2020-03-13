@@ -1,9 +1,15 @@
 package revault
 
 import (
+	"errors"
+
 	"github.com/hashicorp/vault/api"
 
 	"github.com/AgentZombie/revault/token"
+)
+
+var (
+	ErrNotFound = errors.New("not found")
 )
 
 type Client struct {
