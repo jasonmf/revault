@@ -1,4 +1,4 @@
-package kv
+package kv2
 
 import (
 	"fmt"
