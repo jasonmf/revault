@@ -2,6 +2,7 @@ package kv2
 
 import (
 	"encoding/json"
+	"log"
 	"time"
 
 	"github.com/hashicorp/vault/api"
@@ -34,6 +35,7 @@ func SecretFromAPISecret(src *api.Secret) Secret {
 	if m, ok := src.Data["metadata"].(map[string]interface{}); ok {
 		setMetadata(&s.Metadata, m)
 	}
+	log.Printf("Secret: %#v", src)
 	d := src.Data["data"].(map[string]interface{})
 	for k, iv := range d {
 		if k == KeyTTL {

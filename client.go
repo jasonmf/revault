@@ -13,13 +13,13 @@ var (
 )
 
 type Client struct {
-	v  *api.Client
+	V  *api.Client
 	tp token.Provider
 }
 
 func New(v *api.Client, tp token.Provider) *Client {
 	return &Client{
-		v:  v,
+		V:  v,
 		tp: tp,
 	}
 }
@@ -29,8 +29,8 @@ func (c Client) Logical() (*api.Logical, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.v.SetToken(sa.ClientToken)
-	return c.v.Logical(), err
+	c.V.SetToken(sa.ClientToken)
+	return c.V.Logical(), err
 }
 
 func (c Client) Sys() (*api.Sys, error) {
@@ -38,6 +38,6 @@ func (c Client) Sys() (*api.Sys, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.v.SetToken(sa.ClientToken)
-	return c.v.Sys(), err
+	c.V.SetToken(sa.ClientToken)
+	return c.V.Sys(), err
 }
